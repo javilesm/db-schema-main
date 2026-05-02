@@ -10,7 +10,7 @@ services:
       - .env                          # Carga variables sensibles desde un archivo externo (NO subir a Git)
 
     ports:
-      - "0.0.0.0"         # Expone MySQL a toda la red, se cambia para facilitar conexiones
+      - "0.0.0.0:3306"         # Expone MySQL a toda la red, se cambia para facilitar conexiones
 
     volumes:
       - db_data_fresh:/var/lib/mysql  # Volumen persistente para datos de MySQL
