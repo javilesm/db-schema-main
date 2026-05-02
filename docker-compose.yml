@@ -2,20 +2,33 @@ version: '3.8'
 
 services:
   mysql-db:
-    image: mysql:8.0
-    container_name: mysql_core
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root_password_segura
-      MYSQL_DATABASE: pipeline_db
-      MYSQL_USER: pipeline_user
-      MYSQL_PASSWORD: pipeline_password
+    image: mysql:8.0                  # Imagen oficial de MySQL 8.0
+    container_name: mysql_core        # Nombre fijo del contenedor (útil para debugging)
+    restart: always                   # Reinicia automáticamente si el contenedor falla o el host reinicia
+
+    env_file:
+      - .env                          # Carga variables sensibles desde un archivo externo (NO subir a Git)
+
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"         # Expone MySQL solo en localhost (más seguro que 0.0.0.0)
+
     volumes:
-      - db_data:/var/lib/mysql
-      # Montamos la carpeta local 'init' dentro del contenedor
-      - ./init:/docker-entrypoint-initdb.d 
+      - db_data_fresh:/var/lib/mysql  # Volumen persistente para datos de MySQL
+      - ./init:/docker-entrypoint-initdb.d  
+      # Scripts SQL o .sh que se ejecutan SOLO en la primera inicialización (cuando el volumen está vacío)
+
+      - ./config:/etc/mysql/conf.d    
+      # Archivos de configuración personalizados (ej. my.cnf para tuning de performance)
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # Verifica si MySQL está listo para aceptar conexiones
+
+      interval: 10s                   # Frecuencia de chequeo
+      timeout: 5s                     # Tiempo máximo de espera por intento
+      retries: 5                      # Número de intentos antes de marcar como unhealthy
 
 volumes:
-  db_data:
+  db_data_fresh:
+    # Volumen nombrado administrado por Docker
+    # Permite persistir datos aunque el contenedor se elimine
